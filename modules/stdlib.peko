@@ -1,0 +1,172 @@
+class String {
+    @init(val) {
+        this.val = val
+    }
+
+    @op =(rhs) {
+        this.val = rhs.val
+    }
+
+    @op +(rhs) {
+        return this.val+rhs.val
+    }
+
+    @op *(rhs) {
+        i = 0
+        retval = ""
+
+        loop i < rhs {
+            retval += this
+            i = i+1
+        }
+
+        return retval
+    }
+
+    @op ==(rhs) {
+        return rhs.val==this.val
+    }
+
+    @op !=(rhs) {
+        return this.val!=rhs.val
+    }
+
+    length() {
+        return len(this.val)
+    }
+
+    to_number() {
+        return num(this.val)
+    }
+}
+
+class Number {
+    @init(val) {
+        this.val = val
+    }
+
+    @op =(rhs) {
+        this.val = rhs.val
+    }
+
+    @op +(rhs) {
+        return this.val+rhs.val
+    }
+
+    @op *(rhs) {
+        return this.val*rhs.val
+    }
+
+    @op -(rhs) {
+        return this.val-rhs.val
+    }
+
+    @op /(rhs) {
+        return this.val/rhs.val
+    }
+
+    @op ^(rhs) {
+        return this.val^rhs.val
+    }
+
+    @op ==(rhs) {
+        return rhs.val==this.val
+    }
+
+    @op >(rhs) {
+        return this.val>rhs.val
+    }
+
+    @op <(rhs) {
+        return this.val<rhs.val
+    }
+
+    @op >=(rhs) {
+        return this.val>=rhs.val
+    }
+
+    @op <=(rhs) {
+        return this.val<=rhs.val
+    }
+
+    @op !=(rhs) {
+        return this.val!=rhs.val
+    }
+
+    length() {
+        return len(this.val)
+    }
+    
+    to_string() {
+        return str(this.val)
+    }
+}
+
+class Array {
+    @init(vals) {
+        this.vals = vals
+    }
+
+    @op [](rhs) {
+        return this.vals[rhs]
+    }
+
+    @op +(rhs) {
+        return this.vals + rhs
+    }
+    
+    @op =(rhs) {
+        this.vals = rhs;
+    }
+
+    @op ...() {
+        return ...this.vals;
+    }
+
+    getIndexOf(val) {
+        if(len(this.vals) == 0) {
+            return -1
+        }
+
+        i = 0
+        loop i < len(this.vals) && this.vals[i] != val {
+            i += 1
+        }
+
+        if i >= len(this.vals) {
+            return -1
+        }
+
+        return i
+    }
+
+    length() {
+        return len(this.vals)
+    }
+}
+
+class Map {
+    @init(maplit) {
+        this.keys = []
+        this.vals = []
+
+        i = 0
+        loop(i < maplit.length()) {
+            this.keys += maplit[i][0]
+            this.vals += maplit[i][1]
+            i+=1
+        }
+    }
+
+    @op [](rhs) {
+        ind = this.keys.getIndexOf(rhs)
+
+        if(ind == -1) {
+            this.keys += rhs;
+            this.vals += "";
+            return this.vals[(this.keys.length()-1)]
+        } else {
+            return this.vals[ind]
+        }
+    }
+}
