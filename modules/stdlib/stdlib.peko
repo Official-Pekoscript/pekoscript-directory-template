@@ -92,6 +92,10 @@ class Number {
     @op !=(rhs) {
         return this.val!=rhs.val
     }
+    
+    @op %(rhs) {
+        return this.val%rhs.val
+    }
 
     length() {
         return len(this.val)
