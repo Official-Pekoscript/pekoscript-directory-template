@@ -1,0 +1,17 @@
+object files:
+x86_64-linux-gnu/lib/Scrt1.o 
+x86_64-linux-gnu/lib/crti.o 
+11/crtbeginS.o 
+
+Links:
+-L11 
+-Lx86_64-linux-gnu/lib
+-lm 
+-lgcc_s 
+-lgcc
+-lc 
+-lgcc_s 
+-lgcc 
+
+11/crtendS.o 
+x86_64-linux-gnu/lib/crtn.o

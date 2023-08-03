@@ -1,0 +1,27 @@
+includes:
+/usr/local/include
+/usr/aarch64-linux-gnu/include
+/usr/include/aarch64-linux-gnu
+/usr/include
+
+objects:
+/usr/lib/aarch64-linux-gnu/Scrt1.o
+/usr/lib/aarch64-linux-gnu/crti.o
+/usr/lib/gcc/aarch64-linux-gnu/11/crtbeginS.o
+
+/usr/lib/gcc/aarch64-linux-gnu/11/crtendS.o
+/usr/lib/aarch64-linux-gnu/crtn.o
+
+libs:
+/usr/bin/lib/gcc/aarch64-linux-gnu/11
+/usr/lib/aarch64-linux-gnu
+/usr/lib
+
+other libs:
+-lgcc
+-lgcc_s
+-lc
+
+
+
+
