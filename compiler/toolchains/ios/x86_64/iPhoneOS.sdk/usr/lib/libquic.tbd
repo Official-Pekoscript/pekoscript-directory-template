@@ -1,0 +1,9 @@
+--- !tapi-tbd
+tbd-version:     4
+targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+install-name:    '/usr/lib/libquic.dylib'
+exports:
+  - targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+    symbols:         [ _quic_enable_nw_verbose_logging, _quic_enable_verbose_logging, 
+                       _quic_fillout_definition_callbacks, _quic_shorthand_describe_entry ]
+...

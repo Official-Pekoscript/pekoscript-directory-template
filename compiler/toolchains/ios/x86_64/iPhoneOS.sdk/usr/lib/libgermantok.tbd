@@ -1,0 +1,12 @@
+--- !tapi-tbd
+tbd-version:     4
+targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+install-name:    '/usr/lib/libgermantok.dylib'
+exports:
+  - targets:         [ i386-ios-simulator ]
+    symbols:         [ ___gt_mutex, _btrie_build, _btrie_close, _btrie_common_prefix_search, 
+                       _btrie_data, _btrie_exact_match_search, _btrie_open, _btrie_prefix_match_search, 
+                       _btrie_wildcard_match_search ]
+  - targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+    symbols:         [ _germantok_tokenize ]
+...

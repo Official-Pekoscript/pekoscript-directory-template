@@ -1,0 +1,13 @@
+--- !tapi-tbd
+tbd-version:     4
+targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+install-name:    '/System/Library/Frameworks/_AVKit_SwiftUI.framework/_AVKit_SwiftUI'
+swift-abi-version: 7
+exports:
+  - targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+    symbols:         [ '_$s14_AVKit_SwiftUI11VideoPlayerV4bodyQrvg', '_$s14_AVKit_SwiftUI11VideoPlayerV4bodyQrvpMV', 
+                       '_$s14_AVKit_SwiftUI11VideoPlayerV4bodyQrvpQOMQ', '_$s14_AVKit_SwiftUI11VideoPlayerV6player12videoOverlayACyxGSo8AVPlayerCSg_xyXEtcfC', 
+                       '_$s14_AVKit_SwiftUI11VideoPlayerVAA0bC09EmptyViewVRszrlE6playerACyAFGSo8AVPlayerCSg_tcfC', 
+                       '_$s14_AVKit_SwiftUI11VideoPlayerVMa', '_$s14_AVKit_SwiftUI11VideoPlayerVMn', 
+                       '_$s14_AVKit_SwiftUI11VideoPlayerVyxG0bC04ViewAAMc' ]
+...

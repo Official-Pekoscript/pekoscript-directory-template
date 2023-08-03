@@ -1,0 +1,16 @@
+--- !tapi-tbd
+tbd-version:     4
+targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+install-name:    '/System/Library/Frameworks/UserNotificationsUI.framework/UserNotificationsUI'
+exports:
+  - targets:         [ i386-ios-simulator ]
+    symbols:         [ _UserNotificationsUIVersionNumber, _UserNotificationsUIVersionString ]
+    objc-classes:    [ _UNNotificationContentExtensionContext, _UNNotificationExtensionHostViewController, 
+                       _UNNotificationExtensionRemoteViewController ]
+  - targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+    symbols:         [ _UNAppLaunchOriginContentExtension, _UNLogExtensions, _UNLogExtensionsHost, 
+                       _UNLogExtensionsService, _UNRegisterUserNotificationsUILogging, 
+                       __UNNotificationExtensionActionsKey ]
+    objc-classes:    [ _UNNotificationContentExtensionHostContainerViewController, 
+                       _UNNotificationContentExtensionHostContext, _UNNotificationContentExtensionManager ]
+...

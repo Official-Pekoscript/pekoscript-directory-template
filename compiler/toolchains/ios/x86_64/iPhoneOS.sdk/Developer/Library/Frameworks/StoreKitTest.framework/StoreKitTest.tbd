@@ -1,0 +1,12 @@
+--- !tapi-tbd
+tbd-version:     4
+targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+install-name:    '/Developer/Library/Frameworks/StoreKitTest.framework/StoreKitTest'
+exports:
+  - targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+    symbols:         [ _SKAdTestErrorDomain, _SKAdTestPostbackVersion2_1, _SKAdTestPostbackVersion2_2, 
+                       _SKAdTestPostbackVersion3_0, _SKAdTestPostbackVersion4_0, 
+                       _SKTestErrorDomain ]
+    objc-classes:    [ SKAdTestPostback, SKAdTestPostbackResponse, SKAdTestSession, 
+                       SKTestEventObservation, SKTestSession, SKTestTransaction ]
+...

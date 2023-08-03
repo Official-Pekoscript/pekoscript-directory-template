@@ -1,0 +1,12 @@
+--- !tapi-tbd
+tbd-version:     4
+targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+install-name:    '/System/Library/Frameworks/LocalAuthenticationEmbeddedUI.framework/LocalAuthenticationEmbeddedUI'
+current-version: 1132.100.131
+exports:
+  - targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+    symbols:         [ _LACustomPasswordTypeAlphanumeric, _LACustomPasswordTypeCustomDigits, 
+                       _LACustomPasswordTypeFourDigits, _LACustomPasswordTypeSixDigits ]
+    objc-classes:    [ LAContextUITrampoline, LACustomPasswordController, LACustomPasswordControllerConfiguration, 
+                       LACustomPasswordControllerStyle ]
+...

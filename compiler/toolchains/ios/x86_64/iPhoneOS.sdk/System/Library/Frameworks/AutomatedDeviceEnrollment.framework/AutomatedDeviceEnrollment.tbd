@@ -1,0 +1,10 @@
+--- !tapi-tbd
+tbd-version:     4
+targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+install-name:    '/System/Library/Frameworks/AutomatedDeviceEnrollment.framework/AutomatedDeviceEnrollment'
+swift-abi-version: 7
+exports:
+  - targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+    symbols:         [ '_$s7SwiftUI4ViewP25AutomatedDeviceEnrollmentE09automatedeF8Addition11isPresentedQrAA7BindingVySbG_tF', 
+                       '_$s7SwiftUI4ViewP25AutomatedDeviceEnrollmentE09automatedeF8Addition11isPresentedQrAA7BindingVySbG_tFQOMQ' ]
+...

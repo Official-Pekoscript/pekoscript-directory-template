@@ -1,0 +1,10 @@
+--- !tapi-tbd
+tbd-version:     4
+targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+install-name:    '/usr/lib/libAXSafeCategoryBundle.dylib'
+exports:
+  - targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+    symbols:         [ _AXSetUIAXReportSenderErrorLoggerFunction, _AXSetValidationErrorLoggingFunction, 
+                       _UIAccessibilityInstallSafeCategories, _UIAccessibilityInstallSafeCategory ]
+    objc-classes:    [ UIAccessibilitySafeCategory ]
+...

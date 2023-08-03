@@ -1,0 +1,20 @@
+--- !tapi-tbd
+tbd-version:     4
+targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+install-name:    '/System/Library/Frameworks/LocalAuthentication.framework/LocalAuthentication'
+current-version: 1132.100.131
+exports:
+  - targets:         [ i386-ios-simulator ]
+    symbols:         [ _LAFingerDatabaseHash, _LocalAuthenticationVersionNumber, 
+                       _LocalAuthenticationVersionString ]
+    objc-classes:    [ LAClient ]
+  - targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+    symbols:         [ _LAAvailableMechanisms, _LABiometryDatabaseHash, _LACopyExternalizedContext, 
+                       _LAErrorDomain, _LAErrorInfoBiometryType, _LAErrorInfoTCCServerPrompt, 
+                       _LAErrorInfoTCCService, _LAErrorSubcodeKey, _LAPasswordRetryTime, 
+                       _LAStorageErrorDomain, _LATouchIDAuthenticationMaximumAllowableReuseDuration ]
+    objc-classes:    [ LAAuthenticationRequirement, LABiometryFallbackRequirement, 
+                       LAContext, LANotification, LANotificationOfBooleanState, LANotificationUIAppearance, 
+                       LANotificationUIBannerAppearance, LAPersistedRight, LAPrivateKey, 
+                       LAPublicKey, LARight, LARightStore, LASecret, LAStorage ]
+...

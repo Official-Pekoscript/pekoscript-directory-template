@@ -1,0 +1,18 @@
+--- !tapi-tbd
+tbd-version:     4
+targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+install-name:    '/usr/lib/libAXSpeechManager.dylib'
+exports:
+  - targets:         [ i386-ios-simulator ]
+    symbols:         [ _AXAVVoiceQualityFromTTSFootprint, _AXLanguageCanonicalFormToGeneralLanguage, 
+                       _AXRemapLanguageCodeForSpeech, __AXSpeechReplaceEmoticons ]
+    objc-classes:    [ AXSpeechThread ]
+  - targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+    symbols:         [ _AXAVSpeechSynthesisVoiceFromTTSSpeechVoice, _AXAlexVoiceIdentifier, 
+                       _AXNeuralSiriFemaleVoiceIdentifier, _AXNeuralSiriMaleVoiceIdentifier, 
+                       _AXSiriFemaleVoiceIdentifier, _AXSiriMaleVoiceIdentifier, 
+                       _AXSpeechLanguageCanonicalFormToGeneralLanguage, _AXSpeechTransformText, 
+                       _AXSpeechTransformTextWithLanguage, _AXSpeechTransformTextWithLanguageAndVoiceIdentifier, 
+                       _VOTBundle, _isSpeakableEmojiString ]
+    objc-classes:    [ AXEmojiUtilities, AXSpeechAction, AXSpeechManager ]
+...

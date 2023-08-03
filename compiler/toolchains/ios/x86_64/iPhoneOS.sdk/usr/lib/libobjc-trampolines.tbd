@@ -1,0 +1,11 @@
+--- !tapi-tbd
+tbd-version:     4
+targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+install-name:    '/usr/lib/libobjc-trampolines.dylib'
+current-version: 228
+exports:
+  - targets:         [ i386-ios-simulator, x86_64-ios-simulator, arm64-ios-simulator ]
+    symbols:         [ __objc_blockTrampolineImpl, __objc_blockTrampolineImpl_stret, 
+                       __objc_blockTrampolineLast, __objc_blockTrampolineLast_stret, 
+                       __objc_blockTrampolineStart, __objc_blockTrampolineStart_stret ]
+...
