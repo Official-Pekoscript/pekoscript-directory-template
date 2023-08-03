@@ -1,0 +1,176 @@
+import pekosql;
+
+class PekoDB {
+    connection: opaque;
+    tables: std::Map<str, std::Map<str, str>>,
+    
+    func __init__(connection: opaque) {
+        this.connection = connection;
+        std::add_exit_function(
+            std::CallBackFunction(
+                lambda(connection: opaque) {
+                    glue_mysql_close(connection);
+                },
+                this.connection
+            )
+        )
+
+        this.tables = std::Map: <str, std::Map<str, str>>();
+
+        let tables = this.listTables();
+        
+        for table in tables {
+            let table_types = std::Map: <str, str>();
+            let get_fields = this.query(`SHOW COLUMNS FROM ${table};`);
+
+            for field in get_fields {
+                table_types.insert(field[0], field[1]);
+            }
+            
+            this.tables.insert(table, table_types);
+        }
+    }
+
+    func execute_query(stmt: str) {
+        let query = glue_mysql_query(this.connection, stmt);
+        if(cast: <bool>(query)) {
+            console::error(glue_mysql_error(this.connection));
+        }
+    }
+
+    func query(stmt: str): std::Array<std::Array<str>> {
+        let query = glue_mysql_query(this.connection, stmt);
+        if(cast: <bool>(query)) {
+            console::error(glue_mysql_error(this.connection));
+        }
+
+        let results = glue_mysql_store_result(this.connection);
+
+        if (results == null) {
+            console::error(glue_mysql_error(this.connection));
+        }
+
+        let num_fields = glue_mysql_num_fields(results);
+        let current_row = glue_mysql_fetch_row(results);
+
+        let rows = std::Array: <std::Array<str>>();
+
+        while(cast: <opaque>(current_row) != null) {
+            let curent_row_array = std::Array: <str>();
+            
+            for i in std::range(0, num_fields) {
+                if cast: <opaque>(current_row[i]) == null {
+                    curent_row_array.push("null");
+                } else {
+                    curent_row_array.push(current_row[i]);
+                }
+            }
+
+            rows.push(curent_row_array);
+            current_row = glue_mysql_fetch_row(results);
+        }
+
+        return rows;
+    }
+
+    func tableExists(table_name: str): bool {
+        let table_query = this.query(`SHOW TABLES LIKE '${table_name}'`);
+        return table_query.size > 0;
+    }
+
+    func removeTable(table_name: str) {
+        if this.tableExists(table_name) == false {
+            return;
+        }
+
+        this.execute_query(`DROP TABLE ${table_name}`);
+    }
+
+    func createTable(table_name: str, columns: std::Map<str, str>) {
+        if this.tableExists(table_name) {
+            return;
+        }
+        
+        let query_string = std::String(`CREATE TABLE ${table_name}(id INT PRIMARY KEY AUTO_INCREMENT, `)
+        
+        let i = 0;
+        for column in columns {
+            query_string.push(column.first);
+            query_string.push(" ");
+            query_string.push(column.second);
+
+            if i < columns.keys.size-1 {
+                query_string.push(", ");
+            } else {
+                query_string.push(")");
+            }
+            i += 1;
+        }
+        
+        this.execute_query(query_string);
+        this.tables.insert(table_name, columns);
+    }
+
+    func listTables(): std::Array<str> {
+        let tables_query = this.query("SHOW TABLES");
+
+        let tables = std::Array: <str>();
+        
+        for table in tables_query {
+            tables.push(table[0]);
+        }
+
+        return tables
+    }
+
+    func tableSelect(select_query: pekosql::SQLSelectFrom): std::Array<std::Map<str, str>> {
+        let query_string = select_query.getquery();
+        let rows = this.query(query_string);
+
+        let table_name = select_query.collection;
+        let types = this.tables[table_name];
+
+        let results = std::Array: <std::Map<str, str>>();
+
+        for row in rows {
+            let current_result = std::Map: <str, str>();
+
+            for name in types {
+                current_result.keys.push(name.first);
+            }
+
+            for item in row {
+                current_result.vals.push(item);
+            }
+
+            results.push(current_result);
+        }
+
+        return results;
+    }
+
+    func tableInsert(insert_query: pekosql::SQLInsertInto) {
+        let query_string = insert_query.getquery();
+        this.execute_query(query_string);
+    }
+
+    func tableRemove(delete_query: pekosql::SQLDeleteFrom) {
+        let query_string = delete_query.getquery();
+        this.execute_query(query_string);
+    }
+}
+
+func connect_db(db: str, uri: str, port: cint, user: str, passwd: str): PekoDB {
+    let connection = glue_mysql_init(null);
+    
+    if (connection == null) {
+        console::error(glue_mysql_error(connection));
+    }
+
+    if (glue_mysql_real_connect(connection, uri, user, passwd, db, port, "", 0) == null) {
+        console::error(glue_mysql_error(connection));
+        glue_mysql_close(connection);
+    }
+
+    return PekoDB(connection);
+}

@@ -1,0 +1,42 @@
+func print(string: str) {
+    printf("%s", string);
+}
+
+func println(string: str) {
+    printf("%s\n", string);
+}
+
+func error(string: str) {
+    printf("Error in file '%s' on line %d: %s\n", pekort::error_file, pekort::error_line, string);
+    _gc_stop();
+    std::__call_atexit_methods();
+    exit(134);
+}
+
+func input(print: str): std::String {
+    printf("%s", print);
+    
+    let ins = std::String("");
+
+    while true {
+        let curr_char = getchar();
+
+        if curr_char == '\n' {
+            break;
+        }
+        
+        ins.push_char(curr_char);
+    }
+
+    return ins;
+}
+
+let __sys_args__: std::Array<str> = default: <std::Array<str>>();
+
+func get_arguments(): std::Array<str> {
+    if std::compare_memory(__sys_args__, default: <std::Array<str>>()) {
+        error("The system arguments are not initialized");
+    }
+    
+    return __sys_args__;
+}

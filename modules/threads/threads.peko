@@ -1,0 +1,67 @@
+platform "osx" {
+    arch "arm" {
+        import objects.thread_osx_arm as object;
+    }
+
+    arch "x86_64" {
+        import objects.thread_osx_x86_64 as object;
+    }
+}
+
+platform "linux" {
+    arch "arm" {
+        import objects.thread_linux_arm as object;
+    }
+
+    arch "x86_64" {
+        import objects.thread_linux_x86_64 as object;
+    }
+}
+
+platform "win32" {
+    import objects.thread_win32 as object;
+}
+
+platform "android" {
+    import objects.thread_android as object;
+}
+
+platform "ios" {
+    arch "arm" {
+        import objects.thread_ios_arm as object;
+    }
+
+    arch "x86_64" {
+        import objects.thread_ios_x86_64 as object;
+    }
+}
+
+func ext create_thread(worker: (opaque)(opaque), data: opaque): opaque;
+// func ext close_thread(thread: opaque);
+
+class Thread {
+    thread: opaque,
+    worker: (opaque)(opaque),
+    data: opaque,
+
+    func __init__(worker: (opaque)(opaque)) {
+        this.worker = worker;
+        this.data = null;
+    }
+
+    func set_data(data: opaque) {
+        this.data = data;
+    }
+
+    func start() {
+        this.thread = create_thread(this.worker, this.data)
+    }
+
+    func stop() {
+        // close_thread(this.thread);
+    }
+
+    func destroy() {
+        free(this.thread);
+    }
+}

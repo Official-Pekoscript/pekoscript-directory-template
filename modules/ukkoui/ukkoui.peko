@@ -1,0 +1,278 @@
+platform "osx"|"linux"|"win32"|"ios" {
+    import webview; 
+}
+
+import pekodb;
+import webio;
+import threads;
+
+class RequestData {
+    __data__: json::JSONObject;
+    type: str,
+
+    func __init__(data: json::JSONObject, type: str) {
+        this.__data__ = data;
+    }
+
+    func get(idx: str): str {
+        return json::get_string(this.__data__.get(idx));
+    }
+
+    func contains(idx: str): bool {
+        return this.__data__.nodes.contains(idx)
+    }
+}
+
+class UkkoPage {
+    db: pekodb::PekoDB,
+    __db_available__: bool,
+    
+    func oncreate() {}
+    
+    func __init__() {
+        this.__db_available__ = false;
+        this.oncreate();
+    }
+
+    func setDB(db: pekodb::PekoDB) {
+        this.__db_available__ = true;
+        this.db = db;
+    }
+
+    func getDB(): pekodb::PekoDB {
+        if this.__db_available__ == false {
+            console::error("cannot getDB because db has not been set for page");
+        }
+        
+        return this.db;
+    }
+
+    func style(): str {
+        return "";
+    }
+    
+    func request(req_data: RequestData): str {
+        return ""
+    }
+}
+
+class RequestInfo {
+    type: str,
+    data: RequestData,
+
+    func __init__(type: str, data: RequestData) {
+        this.type = type;
+        this.data = data;
+    }
+}
+
+func __server_thread_worker__(arg: opaque): opaque;
+func __request_handler__(request: str, arg: opaque): str;
+
+func __create_html_doc__(body_cont: str, styling: str): str {
+    return 
+    <html>
+        <head>
+            <style>
+                {styling}
+            </style>
+            <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        </head>
+        <body id="___bd">
+            {body_cont}
+        </body>
+    </html>
+}
+
+platform "osx"|"linux"|"win32"|"ios" {
+class UkkoApp {
+    __routes__: std::Map<str, UkkoPage>;
+    __wv__: webview::PekoView;
+    __binded__: bool;
+    __socket__: webio::Socket;
+    __width__: size;
+    __height__: size;
+    __title__: str;
+    __db__: pekodb::PekoDB;
+    __db_connected__: bool;
+
+    func __init__(title: str, width: size, height: size) {
+        this.__routes__ = std::Map: <str, UkkoPage>()
+        this.__binded__ = false
+        this.__width__ = width;
+        this.__height__ = height;
+        this.__title__ = title;
+        this.__db_connected__ = false;
+
+        this.__socket__ = webio::Socket(0, __request_handler__);
+    }
+
+    func connectDB(db: str, uri: str, port: size, account: str, passwd: str) {
+        this.__db_connected__ = true;
+        this.__db__ = pekodb::connect_db(db, uri, port, account, passwd)
+    }
+
+    func route(uri: str, page: UkkoPage) {
+        if this.__db_connected__ {
+            page.setDB(this.__db__);
+        }
+        
+        this.__routes__.insert(uri, page)
+    }
+
+    func request_route(uri: str, request_data: RequestData): str {
+        if this.__routes__.contains(uri) == false {
+            return webio::create_response("<h1>404 UkkoPage Not Found</h1>");
+        }
+
+        let doc = __create_html_doc__(
+            this.__routes__[uri].request(request_data),
+            this.__routes__[uri].style()
+        );
+        
+        return webio::create_response(doc);
+    }
+
+    func run() {
+        let web_thread = threads::Thread(__server_thread_worker__);
+
+        web_thread.set_data(cast: <opaque>(this));
+        web_thread.start();
+
+        this.__wv__ = webview::PekoView(this.__title__, this.__width__, this.__height__);
+
+        while this.__socket__.port == 0 {}
+        this.__wv__.set_url(`http://127.0.0.1:${this.__socket__.port}`)
+        this.__wv__.run();
+
+        this.__socket__.run = false;
+        web_thread.destroy();
+    }
+}
+}
+
+platform "android" {
+class UkkoApp {
+    __routes__: std::Map<str, UkkoPage>;
+    __binded__: bool;
+    __socket__: webio::Socket;
+    __width__: size;
+    __height__: size;
+    __title__: str;
+    __db__: pekodb::PekoDB;
+    __db_connected__: bool;
+
+    func __init__(title: str, width: size, height: size) {
+        this.__routes__ = std::Map: <str, UkkoPage>()
+        this.__binded__ = false
+        this.__width__ = width;
+        this.__height__ = height;
+        this.__title__ = title;
+        this.__db_connected__ = false;
+
+        this.__socket__ = webio::Socket(0, __request_handler__);
+    }
+
+    func connectDB(uri: str, port: size, account: str, passwd: str) {
+        this.__db_connected__ = true;
+    }
+
+    func route(uri: str, page: UkkoPage) {
+        if this.__db_connected__ {
+            page.setDB(this.__db__);
+        }
+
+        this.__routes__.insert(uri, page)
+    }
+
+    func request_route(uri: str, request_data: RequestData): str {
+        if this.__routes__.contains(uri) == false {
+            return webio::create_response("<h1>404 UkkoPage Not Found</h1>");
+        }
+
+        let doc = __create_html_doc__(
+            this.__routes__[uri].request(request_data),
+            this.__routes__[uri].style()
+        );
+        
+        return webio::create_response(doc);
+    }
+
+    func run() {
+        this.__socket__.set_data(this);
+        this.__socket__.listen();
+    }
+}
+}
+
+func ext sscanf(s1: str, s2: str): size;
+
+func __request_handler__(request: str, arg: opaque): str {
+    let app = cast: <UkkoApp>(arg);
+
+    let method = new: <char>(100)
+    let uri = new: <char>(1024)
+    let version = new: <char>(1024)
+
+    sscanf(request, "%s %s %s", method, uri, version);
+
+    let request_data: RequestData = null;
+    let parsed_uri = "/";
+
+    if method == "GET" {
+        let get_data = webio::parse_get(uri)
+        parsed_uri = get_data.uri;
+        
+        let json_data = json::JSONObject();
+
+        let i = 0;
+        while i < get_data.args.keys.size {
+            let pointer = new: <str>(1);
+            pointer[0] = get_data.args.vals[i];
+            let str_data = json::JSONData(cast: <opaque>(pointer), "string");
+
+            json_data.insert(get_data.args.keys[i], str_data);
+
+            i += 1;
+        }
+
+        request_data = RequestData(json_data, method);
+    } elif method == "POST" {
+        parsed_uri = uri;
+        let post_data = webio::parse_post(request);
+        let json_data = json::create(post_data, true);
+        
+        request_data = RequestData(json_data, method);
+    }
+
+    return app.request_route(parsed_uri, request_data);
+}
+
+func __server_thread_worker__(arg: opaque): opaque {
+    let app = cast: <UkkoApp>(arg);
+
+    app.__socket__.set_data(arg);
+    
+    app.__socket__.listen();
+
+    return null;
+}
+
+func send(uri: str, data_json: str): str {
+    let fscript = std::String("let http_request = new XMLHttpRequest(); http_request.open('POST', '");
+    fscript.push(uri);
+    fscript.push("'");
+    
+    fscript.push("); http_request.setRequestHeader('Content-Type', 'UkkoApplication/json'); http_request.setRequestHeader('Data', JSON.stringify(");
+    fscript.push(data_json);
+    fscript.push(")); http_request.send();$('#___bd').load(location.href + '#___bd>*');")
+    
+    return fscript;
+}
+
+func redirect(uri: str): str {
+    let fscript = std::String("<script>window.location.href = '");
+    fscript.push(uri);
+    fscript.push("';</script>")
+    return fscript
+}

@@ -1,0 +1,332 @@
+platform "android" {
+    import pwent as object;
+    import mysql_clients.android.libmysqlclient as archive;
+    import mysql_glue.objects.mysql_glue_android as object;
+}
+
+platform "ios" {
+    arch "arm" {
+        import mysql_clients.ios.arm.libmysqlclient as archive;
+        import mysql_glue.objects.mysql_glue_ios_arm as object;
+    }
+
+    arch "x86_64" {
+        import mysql_clients.ios.x86_64.libmysqlclient as archive;
+        import mysql_glue.objects.mysql_glue_ios_x86_64 as object;
+    }
+}
+
+platform "win32" {
+    import mysql_clients.win32.mysqlclient as winlib;
+    import mysql_clients.win32.libmysql as winlib;
+    import mysql_glue.objects.mysql_glue_win32 as object;
+}
+
+platform "linux" {
+    arch "arm" {
+        import mysql_clients.linux.arm.libmysqlclient as archive;
+        import mysql_glue.objects.mysql_glue_linux_arm as object;
+    }
+
+    arch "x86_64" {
+        import mysql_clients.linux.x86_64.libmysqlclient as archive;
+        import mysql_glue.objects.mysql_glue_linux_x86_64 as object;
+    }
+}
+
+platform "osx" {
+    arch "arm" {
+        import mysql_clients.osx.arm.libmysqlclient as archive;
+        import mysql_glue.objects.mysql_glue_osx_arm as object;
+    }
+
+    arch "x86_64" {
+        import mysql_clients.osx.x86_64.libmysqlclient as archive;
+        import mysql_glue.objects.mysql_glue_osx_x86_64 as object;
+    }
+}
+
+func ext glue_mysql_get_client_info(): str;
+func ext glue_mysql_init(mysql: opaque): opaque;
+func ext glue_mysql_close(mysql: opaque);
+func ext glue_mysql_error(mysql: opaque): str;
+func ext glue_mysql_real_connect(mysql: opaque, host: str, user: str, passwd: str, db: str, port: cint, unix_socket: str, client_flag: size): opaque;
+func ext glue_mysql_query(mysql: opaque, stmt: str): cint;
+func ext glue_mysql_store_result(mysql: opaque): opaque;
+func ext glue_mysql_num_fields(result: opaque): cint;
+func ext glue_mysql_fetch_row(result: opaque): str[];
+func ext glue_mysql_list_fields(mysql: opaque, table: str, wild: str): opaque;
+
+func escape_danger_chars(toescape: str): str {
+    let final = std::String("");
+
+    let i = 0
+    while i < strlen(toescape) {
+        if toescape[i] == '\\' or toescape[i] == '"' or toescape[i] == '\'' {
+            final.push_char('\\');
+            final.push_char(toescape[i]);
+        } elif toescape[i] == '\n' {
+            final.push("\\n");
+        } elif toescape[i] == '\r' {
+            final.push("\\r");
+        } else {
+            final.push_char(toescape[i]);
+        }
+
+        i += 1;
+    }
+
+    return final;
+}
+
+module SQLTypes {
+    func string(): str {
+        return "VARCHAR(255)"
+    }
+
+    func bigstring(): str {
+        return "LONGTEXT"
+    }
+
+    func double(): str {
+        return "DOUBLE_PRECISION"
+    }
+
+    func integer(): str {
+        return "INTEGER"
+    }
+
+    func other(sqltype: str): str {
+        return sqltype;
+    }
+}
+
+module value {
+    func SQLString(string: str): str {
+        return `"${string}"`;
+    }
+
+    func SQLNumber(number: num): str {
+        return `${number}`;
+    }
+
+    func SQLArray(array: std::Array<str>): str {
+        let final = std::String("");
+
+        let i = 0;
+        for item in array {
+            final.push(item);
+
+            if i < array.size-1 {
+                final.push(", ");
+            }
+            i += 1;
+        }
+
+        return final;
+    }
+}
+
+func SQLTable(table_name: str): str {
+    return `${escape_danger_chars(table_name)}`;
+}
+
+func SQLEqual(column: str, value: str): str {
+    return `${escape_danger_chars(column)}=${value}`;
+}
+
+func SQLGreaterThan(column: str, value: str): str {
+    return `${escape_danger_chars(column)}>${value}`;
+}
+
+func SQLGreaterThanEqual(column: str, value: str): str {
+    return `${escape_danger_chars(column)}>=${value}`;
+}
+
+func SQLLessThan(column: str, value: str): str {
+    return `${escape_danger_chars(column)}<${value}`;
+}
+
+func SQLLessThanEqual(column: str, value: str): str {
+    return `${escape_danger_chars(column)}<=${value}`;
+}
+
+func SQLNotEqual(column: str, value: str): str {
+    return `${escape_danger_chars(column)}<>${value}`;
+}
+
+func SQLBetween(column: str, value1: str, value2: str): str {
+    return `${escape_danger_chars(column)} BETWEEN ${value1} AND ${value2}`
+}
+
+func SQLLike(column: str, match: str): str {
+    return `${escape_danger_chars(column)} LIKE ${match}`
+}
+
+func SQLIn(column: str, match: str): str {
+    return `${escape_danger_chars(column)} IN (${match})`
+}
+
+func SQLNotBetween(column: str, value1: str, value2: str): str {
+    return `${escape_danger_chars(column)} NOT BETWEEN ${escape_danger_chars(value1)} AND ${escape_danger_chars(value2)}`
+}
+
+func SQLNotLike(column: str, match: str): str {
+    return `${escape_danger_chars(column)} NOT LIKE ${escape_danger_chars(match)}`
+}
+
+func SQLNotIn(column: str, match: str): str {
+    return `${escape_danger_chars(column)} NOT IN (${escape_danger_chars(match)})`
+}
+
+class SQLSelectFrom {
+    column: str;
+    collection: str;
+    conditions: std::Array<std::Pair<str, str>>;
+
+    func __init__(collection: str) {
+        this.column = "*";
+        this.collection = collection;
+        this.conditions = std::Array: <std::Pair<str, str>>();
+    }
+
+    func andwhere(condition: str): SQLSelectFrom {
+        this.conditions.push(std::Pair: <str, str>(condition, "and"));
+        return this;
+    }
+
+    func orwhere(condition: str): SQLSelectFrom {
+        this.conditions.push(std::Pair: <str, str>(condition, "or"));
+        return this;
+    }
+
+    func getquery(): str {
+        let finalquery = std::String(`SELECT ${escape_danger_chars(this.column)} FROM ${escape_danger_chars(this.collection)}`);
+        
+        let i = 0;
+        for condition in this.conditions {
+            if i == 0 {
+                finalquery.push(" WHERE ")
+            } else {
+                if condition.second == "and" {
+                    finalquery.push(" AND ")
+                } else {
+                    finalquery.push(" OR ")
+                }
+            }
+
+            finalquery.push(condition.first);
+
+            i += 1;
+        }
+
+        return finalquery
+    }
+}
+
+class SQLDeleteFrom {
+    collection: str;
+    conditions: std::Array<std::Pair<str, str>>;
+
+    func __init__(collection: str) {
+        this.collection = collection;
+        this.conditions = std::Array: <std::Pair<str, str>>();
+    }
+
+    func andwhere(condition: str): SQLDeleteFrom {
+        this.conditions.push(std::Pair: <str, str>(condition, "and"));
+        return this;
+    }
+
+    func orwhere(condition: str): SQLDeleteFrom {
+        this.conditions.push(std::Pair: <str, str>(condition, "or"));
+        return this;
+    }
+
+    func getquery(): str {
+        let finalquery = std::String(`DELETE FROM ${escape_danger_chars(this.collection)}`);
+        
+        let i = 0;
+        for condition in this.conditions {
+            if i == 0 {
+                finalquery.push(" WHERE ")
+            } else {
+                if condition.second == "and" {
+                    finalquery.push(" AND ")
+                } else {
+                    finalquery.push(" OR ")
+                }
+            }
+
+            finalquery.push(condition.first);
+
+            i += 1;
+        }
+
+        return finalquery
+    }
+}
+
+class SQLInsertInto {
+    collection: str;
+    keys: std::Array<str>;
+    vals: std::Array<str>;
+
+    func __init__(collection: str) {
+        this.vals = std::Map: <str, str>();
+        this.collection = collection;
+        this.keys = std::Array: <str>();
+        this.vals = std::Array: <str>();
+    }
+
+    func insert(key: str, value: str): SQLInsertInto {
+        this.keys.push(key);
+        this.vals.push(value);
+        return this;
+    }
+
+    func values(values: std::Map<str, str>): SQLInsertInto {
+        for value in values {
+            this.keys.push(value.first);
+            this.vals.push(value.second);
+        }
+        
+        return this;
+    }
+
+    func getquery(): str {
+        let finalquery = std::String(`INSERT INTO ${escape_danger_chars(this.collection)}(`);
+
+        let i = 0;
+        for key in this.keys {
+            finalquery.push(key);
+
+            if i == this.keys.size-1 {
+                finalquery.push(")\n");
+            } else {
+                finalquery.push(", ");
+            }
+
+            i += 1;
+        }
+
+        finalquery.push("VALUES (")
+        
+        let i = 0;
+        for value in this.vals {
+            finalquery.push(value);
+
+            if i == this.keys.size-1 {
+                finalquery.push(")");
+            } else {
+                finalquery.push(", ");
+            }
+
+            i += 1;
+        }
+
+        finalquery.push(";");
+
+        return finalquery
+    }
+}

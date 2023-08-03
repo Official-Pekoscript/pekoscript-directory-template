@@ -1,0 +1,335 @@
+class JSONToString {
+    func __init__() {}
+
+    func __to_string__(): str {
+        return "";
+    }
+}
+
+class JSONData : JSONToString {
+    data: opaque,
+    type: str,
+
+    func __init__(data: opaque, type: str) {
+        this.data = data;
+        this.type = type;
+    }
+
+    func __to_string__(): str {
+        if this.type == "number" {
+            let numptr = cast: <num[]>(this.data);
+            return dtos(numptr[0]);
+        } elif this.type == "string" {
+            let strptr = cast: <str[]>(this.data);
+            let string = strptr[0]
+
+            let final_str = std::String("\"");
+            final_str.push(string);
+            final_str.push("\"");
+            return final_str;
+        } elif this.type == "array" {
+            let final_str = std::String("[");
+            let array = cast: <std::Array<JSONData>>(this.data);
+            if array.size == 0 {
+                return "[]"
+            }
+
+            for data in array {
+                final_str.push(data.__to_string__());
+                final_str.push(", ");
+            }
+
+            final_str.remove(final_str.len()-1)
+            final_str.remove(final_str.len()-1)
+            final_str.push("]");
+
+            return final_str;
+        } else {
+            let object = cast: <JSONToString>(this.data);
+            return object.__to_string__();
+        }
+        
+        return "";
+    }
+}
+
+class JSONObject : JSONToString {
+    nodes: std::Map<str, JSONData>,
+
+    func __init__() {
+        this.nodes = std::Map: <str, JSONData>();
+    }
+
+    func insert(key: str, val: JSONData) {
+        this.nodes.insert(key, val);
+    }
+
+    func remove(key: str) {
+        this.nodes.remove(key);
+    }
+
+    func get(key: str): JSONData {
+        return this.nodes[key];
+    }
+
+    func contains(key: str): bool {
+        return this.nodes.contains(key);
+    }
+
+    func __to_string__(): str {
+        if this.nodes.keys.size == 0 {
+            return "{}"
+        }
+        
+        let final_str = std::String("{");
+
+        for node in this.nodes {
+            final_str.push("\"");
+            final_str.push(node.first);
+            final_str.push("\"");
+            final_str.push(": ");
+            final_str.push(node.second.__to_string__());
+            final_str.push(", ");
+        }
+
+        final_str.remove(final_str.len()-1)
+        final_str.remove(final_str.len()-1)
+        final_str.push("}");
+
+        return final_str;
+    }
+
+    func __eq__(other: JSONData): bool {
+        return this.__to_string__() == other.__to_string__();
+    }
+
+    func __neq__(other: JSONData): bool {
+        return this.__eq__(other) == false;
+    }
+}
+
+func get_string(data: JSONData): str {
+    return cast: <str[]>(data.data)[0];
+}
+
+func get_number(data: JSONData): num {
+    return cast: <num[]>(data.data)[0];
+}
+
+func get_object(data: JSONData): JSONObject {
+    return cast: <JSONObject[]>(data.data)[0];
+}
+
+func get_array(data: JSONData): std::Array<JSONData> {
+    return cast: <std::Array<JSONData>>(data.data);
+}
+
+func is_alpha(c: char): bool {
+    return ((c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z'))
+}
+
+func is_alnum(c: char): bool {
+    return is_alpha(c) or (c >= '0' and c <= '9');
+}
+
+func is_num(c: char): bool {
+    return c >= '0' and c <= '9'
+}
+
+func is_whitespace(c: char): bool {
+    return c == ' ' or c == '\r' or c == '\n' or c == '\t';
+}
+
+func tokenize(json: std::String): std::Array<std::Pair<str, str>> {
+    let tokens = std::Array: <std::Pair<str, str>>();
+
+    let i = 0;
+
+    while i < json.len() {
+        if json[i] == '\'' or json[i] == '"' {
+            let string = std::String("");
+            let string_starter = json[i];
+            i += 1;
+
+            while i < json.len() and json[i] != string_starter {
+                if json[i] == '\\' {
+                    i += 1
+                    string.push_char(json[i]);
+                } else {
+                    string.push_char(json[i]);
+                }
+
+                i += 1
+            }
+
+            i += 1;
+
+            tokens.push(std::Pair: <str, str>(string, "string_tk"));
+        } elif is_alpha(json[i]) {
+            let identifier = std::String("");
+
+            while i < json.len() and (is_alnum(json[i]) or json[i] == '_') {
+                identifier.push_char(json[i])
+                i += 1
+            }
+
+            tokens.push(std::Pair: <str, str>(identifier, "identifier_tk"));
+        } elif is_num(json[i]) {
+            let is_dec = false;
+
+            let number = std::String("");
+
+            while i < json.len() and (is_num(json[i]) or (json[i] == '.' and is_dec == false)) {
+                if json[i] == '.' {
+                    is_dec = true
+                }
+                
+                number.push_char(json[i])
+                i += 1
+            }
+
+            tokens.push(std::Pair: <str, str>(number, "number_tk"));
+        } elif is_whitespace(json[i]) {
+            i += 1;
+        } else {
+            let unknown = std::String("");
+            unknown.push_char(json[i])
+
+            tokens.push(std::Pair: <str, str>(unknown, "unknown_tk"));
+            
+            i += 1;
+        }
+    }
+
+    return tokens;
+}
+
+func create_number(number: num): JSONData {
+    let pointer = new: <num>(1);
+    pointer[0] = number;
+    
+    return JSONData(cast: <opaque>(pointer), "number");
+}
+
+func create_string(string: str): JSONData {
+    let pointer = new: <str>(1);
+    pointer[0] = string;
+    
+    return JSONData(cast: <opaque>(pointer), "string");
+}
+
+func create_array(data: std::Array<JSONData>): JSONData {
+    let pointer = new: <std::Array<JSONData>>(1);
+    pointer[0] = data;
+    
+    return JSONData(cast: <opaque>(data), "array");
+}
+
+class JSONParser {
+    tokens: std::Array<std::Pair<str, str>>,
+    index: size,
+    use_strings: bool,
+    
+    func __init__(tokens: std::Array<std::Pair<str, str>>, use_strings: bool) {
+        this.tokens = tokens
+        this.use_strings = use_strings
+        this.index = 0;
+    }
+
+    func parse_number(): JSONData {
+        let number = std::stod(this.tokens[this.index].first);
+        let pointer = new: <num>(1);
+        pointer[0] = number;
+        
+        this.index += 1
+        
+        return JSONData(cast: <opaque>(pointer), "number");
+    }
+
+    func parse_string(): JSONData {
+        let string: str = this.tokens[this.index].first;
+        let pointer = new: <str>(1);
+        pointer[0] = string;
+
+        this.index += 1
+        
+        return JSONData(cast: <opaque>(pointer), "string");
+    }
+
+    func parse_array(): JSONData {
+        let data = std::Array: <JSONData>();
+        this.index += 1;
+        
+        while this.index < this.tokens.size and this.tokens[this.index].first != "]" {
+            data.push(this.parse());
+            
+            if this.tokens[this.index].first == "," {
+                this.index += 1
+            }
+        }
+        this.index += 1
+
+        let pointer = new: <std::Array<JSONData>>(1);
+        pointer[0] = data;
+        
+        return JSONData(cast: <opaque>(data), "array");
+    }
+    
+    func parse_object(): JSONData {
+        let jsonobj = JSONObject();
+
+        this.index += 1
+
+        while this.index < this.tokens.size and this.tokens[this.index].first != "}" {
+            let key = this.tokens[this.index].first;
+            this.index += 1;
+
+            if this.tokens[this.index].first != ":" {
+                console::error("Error when parsing JSON");
+            }
+
+            let val = this.parse();
+            
+            if this.tokens[this.index].first == "," {
+                this.index += 1;
+            }
+
+            jsonobj.insert(key, val)
+        }
+        this.index += 1;
+        
+        let pointer = new: <JSONObject>(1);
+        pointer[0] = jsonobj;
+        
+        return JSONData(cast: <opaque>(pointer), "object");
+    }
+
+    func parse(): JSONData {
+        if this.tokens[this.index].first == "[" {
+            return this.parse_array()
+        } elif this.tokens[this.index].first == "{" {
+            return this.parse_object()
+        } elif this.use_strings or this.tokens[this.index].second == "string_tk" {
+            return this.parse_string()
+        } elif this.tokens[this.index].second == "number_tk" {
+            return this.parse_number()
+        }
+
+        return default: <JSONData>();
+    }
+}
+
+func create(json: std::String, use_strings: bool): JSONObject {
+    if json.len() > 0 and json[0] == '{' {
+        // lex the string
+        let tokens = tokenize(json)
+
+        let parser = JSONParser(tokens, use_strings)
+        let object = get_object(parser.parse());
+        
+        return object;
+    } else {
+        console::error("JSON must start with a '{'");
+        return default: <JSONObject>();
+    }
+}

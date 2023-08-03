@@ -1,0 +1,170 @@
+class Component {
+    func oncreate() {
+        
+    }
+    
+    func __init__() {
+        this.oncreate();
+    }
+
+    func render(content: str): str {
+        return "";
+    }
+
+    func __eq__(other: Component): bool {
+        return this.render("") == other.render("")
+    }
+
+    func __neq__(other: Component): bool {
+        return this.__eq__(other) == false;
+    }
+}
+
+let global_components_created: bool = false;
+let global_components: std::Map<str, Component> = default: <std::Map<str, Component>>();
+
+module ComponentHandler {
+    func start() {
+        global_components = std::Map: <str, Component>();
+        global_components_created = true;
+    }
+
+    func add_component(nm: str, comp: Component) {
+        global_components.insert(nm, comp);
+    }
+}
+
+func escape_char(string: str, character: char): str {    
+    let i = 0;
+    while i < strlen(string) {
+        // if &string[i] == character {
+        if string[i] == character {
+            string[i] = '\\';
+            i += 1;
+        }
+        i += 1;
+    }
+
+    return string;
+}
+
+class Tag {
+    name: str,
+    attributes: std::Map<str, str>,
+    contents: std::Array<Tag>,
+    string_contents: str
+
+    func __init__(name: str, attributes: std::Map<str, str>, contents: std::Array<Tag>, string_contents: str) {
+        this.name = name;
+        this.attributes = attributes;
+        this.contents = contents;
+        this.string_contents = string_contents;
+    }
+
+    func add_element(elem: Tag) {
+        this.contents.push(elem)
+    }
+
+    func set_inner_text(new_inner_text: str) {
+        this.string_contents = new_inner_text;
+    }
+
+    func get_inner_text(): str {
+        return this.string_contents;
+    }
+
+    func add_attribute(attribute: str, value: str) {
+        this.attributes.insert(attribute, value)
+    }
+
+    func remove_attribute(attribute: str) {
+        this.attributes.remove(attribute)
+    }
+
+    func __brace__(attribute: str): str {
+        return this.attributes[attribute]
+    }
+
+    func __brace_set__(attribute: str): &str {
+        return this.attributes.__brace_set__(attribute)
+    }
+    
+    func render(): str {  
+        if this.name == "" {
+            return this.string_contents;
+        }
+
+        let final_value = std::String("<");
+        final_value.push(this.name);
+
+        for attribute in this.attributes {
+            final_value.push(" ");
+            final_value.push(attribute.first);
+            final_value.push("=\"");
+            final_value.push(escape_char(attribute.second, '"'));
+            final_value.push("\"");
+        }
+
+        final_value.push(">");
+
+        let inner_text = std::String("")
+
+        let i = 0;
+        while i < this.contents.size {
+            inner_text.push(this.contents[i].render());
+            i += 1
+        }
+
+        if global_components_created {
+            if global_components.contains(this.name) {
+                return global_components[this.name].render(inner_text);
+            }
+        }
+        
+        final_value.push(inner_text);
+
+        final_value.push("</");
+        final_value.push(this.name);
+        final_value.push(">");
+
+        return final_value;
+    }
+
+    func __to_string__(): str {
+        return this.render();
+    }
+
+    func __eq__(other: Tag): bool {
+        return this.render() == other.render();
+    }
+
+    func __neq__(other: Tag): bool {
+        return this.__eq__(other)==false;
+    }
+}
+
+func attributes(): std::Map<str, str> {
+    return std::Map: <str, str>();
+}
+
+func children(): std::Array<Tag> {
+    return std::Array: <Tag>();
+}
+
+func ext main(argc: cint, argv: str[]): cint {
+    std::__init_atexit_methods();
+    ComponentHandler::start();
+
+    let arguments = std::Array: <str>();
+    arguments.allocate(argc);
+
+    for i in std::range(0, argc) {
+        arguments.set(i, argv[i]);
+    }
+    
+    console::__sys_args__ = arguments;
+
+    onstart();
+    std::__call_atexit_methods();
+    return cast: <cint>(0);
+}

@@ -1,0 +1,61 @@
+let error_file: str = null;
+let error_line: cint = cast: <cint>(0);
+
+func ext free(pointer: opaque);
+
+platform "win32" {
+    import objects.gc_win32 as object;
+    import objects.rt_win32 as object;
+}
+
+platform "android" {
+    import objects.gc_android as object;
+    import objects.rt_android as object;
+}
+
+platform "ios" {
+    arch "x86_64" {
+        import objects.gc_ios_x86_64 as object;
+        import objects.rt_ios_x86_64 as object;
+    }
+    arch "arm" {
+        import objects.gc_ios_arm as object;
+        import objects.rt_ios_arm as object;
+    }
+}
+
+platform "osx" {
+    arch "arm" {
+        import objects.gc_osx_arm as object;
+        import objects.rt_osx_arm as object;
+    }
+
+    arch "x86_64" {
+        import objects.gc_osx_x86_64 as object;
+        import objects.rt_osx_x86_64 as object;
+    }
+}
+
+platform "linux" {
+    arch "arm" {
+        import objects.gc_linux_arm as object;
+        import objects.rt_linux_arm as object;
+    }
+
+    arch "x86_64" {
+        import objects.gc_linux_x86_64 as object;
+        import objects.rt_linux_x86_64 as object;
+    }
+}
+
+func ext strremove(s: str, ind: size): str;
+func ext strinsert(s: str, s2: str, ind: size): str;
+func ext stradd(s: str, s2: str): str;
+func ext itos(n: size): str;
+func ext dtos(n: num): str;
+
+func ext _gc_activate(argc: opaque);
+func ext _gc_stop();
+func ext _gc_alloc(sz: size): opaque;
+func ext _gc_mark();
+func ext _gc_add_object(ptr: opaque);

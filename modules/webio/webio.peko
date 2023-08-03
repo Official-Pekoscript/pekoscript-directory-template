@@ -1,0 +1,217 @@
+import json;
+
+class URI {
+    uri: str,
+    args: std::Map<str, str>,
+
+    func __init__(uri: str, args: std::Map<str, str>) {
+        this.uri = uri
+        this.args = args
+    }
+}
+
+func decode_uri(uri: str): str {
+    let decode = true;
+
+    let decode_string = new: <char>(strlen(uri)+1);
+    let e_str = new: <char>(2);
+    e_str[0] = '0';
+    e_str[1] = '0';
+
+    strcpy(decode_string, uri)
+    
+    while decode {
+        decode = false;
+
+        let i = 0;
+        while i < strlen(decode_string) {
+            if decode_string[i+1] == cast: <char>(0) {
+                return decode_string;
+            }
+
+            if decode_string[i] == '%' and isxdigit(decode_string[i+1]) and isxdigit(decode_string[i+2]) {
+                decode = true;
+                
+                e_str[0] = decode_string[i+1];
+                e_str[1] = decode_string[i+2];
+
+                memmove(&decode_string[i+1], &decode_string[i+3], strlen(&decode_string[i+3])+1);
+            
+                let hex = 'a';
+                sscanf(e_str, "%x", &hex);
+
+                decode_string[i] = hex;
+            }
+
+            i += 1;
+        }
+    }
+
+    return decode_string;
+}
+
+func parse_get(uris: str): URI {
+    let tokens = json::tokenize(std::String(decode_uri(uris)));
+
+    let uri = std::String("")
+
+    let i = 0;
+    while i < tokens.size {
+        if tokens[i].first == "?" {
+            break;
+        }
+        
+        uri.push(tokens[i].first)
+        i += 1
+    }
+
+    if i >= tokens.size {
+        return URI(uri, std::Map: <str, str>())
+    }
+
+    i += 1;
+
+    let args = std::Map: <str, str>()
+
+    while i < tokens.size {
+        let arg_name = tokens[i].first;
+
+        i += 2;
+
+        let arg_value = std::String("");
+
+        if i >= tokens.size {
+            break;
+        }
+
+        while tokens[i].first != "&" {
+            if(tokens[i].first == "+") {
+                arg_value.push(" ")
+            } else {
+                arg_value.push(tokens[i].first)
+            }
+
+            i += 1;
+            if i >= tokens.size {
+                break;
+            }
+        }
+
+        
+        i += 1;
+        args.insert(arg_name, arg_value);
+    }
+
+    return URI(uri, args);
+}
+
+func parse_post(req: str): str {
+    let tokens = json::tokenize(req);
+
+    let i = 0;
+
+    while tokens[i].first != "Data" {
+        i += 1;
+    }
+
+    i += 2;
+
+    let final_json = std::String("");
+    while tokens[i].first != "}" {
+        if tokens[i].second == "string_tk" {
+            final_json.push("\"");
+        }
+
+        final_json.push(tokens[i].first);
+
+        if tokens[i].second == "string_tk" {
+            final_json.push("\"");
+        }
+        
+        i += 1;
+    }
+    final_json.push("}");
+    
+    return final_json;
+}
+
+func create_response(htmls: str): str {
+    // \r\nAccess-Control-Allow-Headers: Content-Type\r\nAccess-Control-Allow-Methods: GET, POST, PUT
+    let response = std::String(`HTTP/1.1 200 OK\nServer: pekoweb\nContent-type: text/html; charset=utf-8\nContent-Length: ${itos(strlen(htmls))} \n\n`);
+    response.push(htmls);
+
+    return response;
+}
+
+platform "osx" {
+    arch "x86_64" {
+        import objects.webio_osx_x86_64 as object;
+    }
+
+    arch "arm" {
+        import objects.webio_osx_arm as object;
+    }
+}
+
+platform "linux" {
+    arch "x86_64" {
+        import objects.webio_linux_x86_64 as object;
+    }
+
+    arch "arm" {
+        import objects.webio_linux_arm as object;
+    }
+}
+
+platform "win32" {
+    import objects.webio_win32 as object;
+}
+
+platform "android" {
+    import objects.webio_android as object;
+}
+
+platform "ios" {
+    arch "x86_64" {
+        import objects.webio_ios_x86_64 as object;
+    }
+
+    arch "arm" {
+        import objects.webio_ios_arm as object;
+    }
+}
+
+func ext create_server(port: size[], buffer: str, buffer_size: size, request_handle: (str)(str, opaque), data: opaque, loaded: &bool, run: &bool): size;
+
+class Socket {
+    port: size,
+    buffer: str,
+    request_handle: (str)(str, opaque),
+    data: opaque,
+    
+    loaded: bool,
+    run: bool,
+
+    func __init__(port: size, request_handle: (str)(str, opaque)) {
+        this.port = port;
+        this.request_handle = request_handle;
+        
+        this.loaded = false;
+        this.run = false;
+        this.buffer = new: <char>(2048);
+        this.data = null;
+    }
+
+    func set_request_handle(request_handle: (str)(str, opaque)) {
+        this.request_handle = request_handle;
+    }
+
+    func set_data(data: opaque) {
+        this.data = data;
+    }
+
+    func listen() {
+        this.run = true;
+        create_server(&this.port, this.buffer, 2048, this.request_handle, this.data, &this.loaded, &this.run);
+    }
+}

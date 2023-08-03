@@ -1,0 +1,833 @@
+func ext printf(s: str): size; // ...
+// IO and filesystem
+func ext fprintf(s: str, s2: str): size; // ...
+func ext fscanf(s: str, s2: str): size; // ...
+func ext getchar(): char;
+func ext fopen(f: str, fn: str): str;
+func ext fclose(f: str);
+func ext fgetc(f: str): char;
+func ext mkdir(dir: str): size;
+
+// Memory management
+func ext malloc(sz: size): str;
+func ext realloc(ptr: opaque, sz: size): str;
+func ext memmove(ptr1: opaque, ptr2: opaque, sz: size): str;
+func ext memcpy(ptr1: opaque, ptr2: opaque, sz: size): str;
+func ext free(ptr: opaque): str;
+
+// String manipulation
+func ext strcmp(s: str, s2: str): cint;
+func ext strcat(s: str, s2: str): str;
+func ext strcpy(s: str, s2: str): str;
+func ext strncpy(s: str, s2: str, n: size): str;
+func ext strlen(s: str): cint;
+func ext isxdigit(c: char): bool;
+
+// Converting/boxing
+// func ext atof(s: str): num; // str->double
+// func ext atol(s: str): size; // str->size
+// func ext strtol(s: str): size;
+func ext sscanf(src: str, fmt: str): size;
+
+func __call_atexit_methods();
+func __init_atexit_methods();
+
+func ext exit(code: cint);
+func error(msg: str) {
+    printf("Error in file '%s' on line %d: %s\n", pekort::error_file, pekort::error_line, msg);
+    _gc_stop();
+    __call_atexit_methods();
+    exit(134);
+}
+
+platform "win32-gui" {
+    import winmain as object;
+}
+
+platform "win32" {
+    import sscanf_win32 as object;
+}
+
+func ext onstart();
+
+func ext main(argc: cint, argv: str[]): cint;
+
+class Pair<FT, ST> {
+    first: FT,
+    second: ST,
+
+    func __init__(first: FT, second: ST) {
+        this.first = first;
+        this.second = second;
+    }
+
+    func __eq__(other: Pair<FT, ST>): bool {
+        return this.first == other.first and this.second == other.second;
+    }
+
+    func __neq__(other: Pair<FT, ST>): bool {
+        return this.__eq__(other) == false;
+    }
+}
+
+class Iterator<IT> {
+    func __init__() {}
+
+    func next(): IT {
+        return default: <IT>();
+    }
+
+    func back(): IT {
+        return default: <IT>();
+    }
+
+    func increment(inc: size): IT {
+        return default: <IT>();
+    }
+
+    func current(): IT {
+        return default: <IT>();
+    }
+
+    func inrange(): bool {
+        return true;
+    }
+
+    func __iter__(): Iterator<IT> {
+        return this;
+    }
+}
+
+class ListIterator<AT> : Iterator<AT> {
+    data: std::Array<AT>,
+    index: size
+
+    func __init__(array: std::Array<AT>) {
+        this.data = array;
+        this.index = 0;
+    }
+
+    func next(): AT {
+        if this.index >= this.data.size {
+            return default: <AT>();
+        }
+        
+        let data = this.data[this.index];
+        this.index += 1;
+        
+        return data;
+    }
+
+    func back(): AT {
+        if this.index < 0 {
+            return default: <AT>();
+        }
+        
+        let data = this.data[this.index];
+        this.index -= 1;
+        
+        return data;
+    }
+
+    func increment(inc: size): AT {
+        if this.index >= this.data.size or this.index < 0 {
+            return default: <AT>();
+        }
+
+        let data = this.data[this.index];
+        this.index += inc;
+        
+        return data;
+    }
+
+    func current(): AT {
+        return this.data[this.index];
+    }
+
+    func inrange(): bool {
+        return this.index >= 0 and this.index < this.data.size;
+    }
+}
+
+class MapIterator<MKT, MVT>: Iterator<Pair<MKT, MVT>> {
+    data: std::Map<MKT, MVT>,
+    index: size
+
+    func __init__(map: std::Map<MKT, MVT>) {
+        this.data = map;
+        this.index = 0;
+    }
+
+    func next(): std::Pair<MKT, MVT> {
+        if this.index >= this.data.keys.size {
+            printf("inrange is %d\n", cast: <size>(this.inrange()));
+            return default: <std::Pair<MKT, MVT>>();
+        }
+        
+        let data = Pair: <MKT, MVT>(this.data.keys[this.index], this.data.vals[this.index]);
+        this.index += 1;
+
+        return data;
+    }
+
+    func back(): std::Pair<MKT, MVT> {
+        if this.index < 0 {
+            return default: <std::Pair<MKT, MVT>>();
+        }
+        
+        let data = Pair: <MKT, MVT>(this.data.keys[this.index], this.data.vals[this.index]);
+        this.index -= 1;
+        
+        return data;
+    }
+
+    func increment(inc: size): std::Pair<MKT, MVT> {
+        if this.index >= this.data.keys.size or this.index < 0 {
+            return default: <std::Pair<MKT, MVT>>();
+        }
+
+        let data = Pair: <MKT, MVT>(this.data.keys[this.index], this.data.vals[this.index]);
+        this.index += inc;
+        
+        return data;
+    }
+
+    func current(): std::Pair<MKT, MVT> {
+        return Pair: <MKT, MVT>(this.data.keys[this.index], this.data.vals[this.index]);
+    }
+
+    func inrange(): bool {
+        return this.index >= 0 and this.index < this.data.keys.size;
+    }
+}
+
+class RangeIterator : Iterator<size> {
+    begin: size,
+    end: size,
+    curr: size,
+
+    func __init__(begin: size, end: size) {
+        this.begin = begin;
+        this.end = end;
+        this.curr = begin;
+    }
+
+    func next(): size {
+        if this.curr >= this.end {
+            return -1;
+        }
+        
+        let data = this.curr;
+        this.curr += 1;
+        
+        return data;
+    }
+
+    func back(): size {
+        if this.curr < this.begin {
+            return -1;
+        }
+        
+        let data = this.curr;
+        this.curr -= 1;
+        
+        return data;
+    }
+
+    func increment(inc: size): size {
+        if this.curr >= this.end or this.curr < this.begin {
+            return -1;
+        }
+
+        let data = this.curr;
+        this.curr += inc;
+        
+        return data;
+    }
+
+    func current(): size {
+        return this.curr;
+    }
+
+    func inrange(): bool {
+        return this.curr >= this.begin and this.curr < this.end;
+    }
+}
+
+class StringIterator<T> : Iterator<char> {
+    data: String,
+    index: size
+
+    func __init__(string: String) {
+        this.data = string;
+        this.index = 0;
+    }
+
+    func next(): char {
+        if this.index >= this.data.len() {
+            return cast: <char>(-1);
+        }
+        
+        let data = this.data[this.index];
+        this.index += 1;
+        
+        return data;
+    }
+
+    func back(): char {
+        if this.index < 0 {
+            return cast: <char>(-1);
+        }
+        
+        let data = this.data[this.index];
+        this.index -= 1;
+        
+        return data;
+    }
+
+    func increment(inc: size): char {
+        if this.index >= this.data.len() or this.index < 0 {
+            return cast: <char>(-1);
+        }
+
+        let data = this.data[this.index];
+        this.index += inc;
+        
+        return data;
+    }
+
+    func current(): char {
+        return this.data[this.index];
+    }
+
+    func inrange(): bool {
+        return this.index >= 0 and this.index < this.data.len();
+    }
+}
+
+func range(start: size, end: size): Iterator<size> {
+    if start >= end {
+        error("range start point is greater or equal to range end point")
+    }
+    
+    return RangeIterator(start, end);
+}
+
+func stoi(s: str): size;
+func stod(s: str): num;
+func ctos(c: char): str;
+func ctoi(c: char): size;
+
+class Array<T> {
+    values: T[],
+    size: size,
+
+    func __init__() {
+        this.size = 0;
+    }
+
+    func __get_values__(): T[] {
+        return this.values;
+    }
+
+    func push(val: T) {
+        if this.size > 0 {
+            let buffer = new: <T>(this.size);
+
+            memcpy(cast: <opaque>(buffer), cast: <opaque>(this.values), sizeof: <T>()*this.size)
+
+            this.size += 1;
+            this.values = new: <T>(this.size);
+
+            memcpy(cast: <opaque>(this.values), cast: <opaque>(buffer), sizeof: <T>()*(this.size-1))
+        } else {
+            this.size += 1;
+            this.values = new: <T>(this.size);
+        }
+        
+        this.values[this.size-1] = val;
+    }
+
+    func push_alloc() {
+        if this.size != 0 {
+            let buffer = new: <T>(this.size);
+            memmove(buffer, this.values, sizeof: <T>()*this.size)
+
+            this.size += 1;
+            this.values = new: <T>(this.size);
+            memmove(this.values, buffer, sizeof: <T>()*this.size)
+        } else {
+            this.size += 1;
+            this.values = new: <T>(this.size);
+        }
+    }
+
+    func remove(index: size) {
+        if index >= this.size {
+            error("attempted to remove element from index outside of array bounds")    
+        }
+        
+        if this.size == 1 {
+            this.size = 0
+            this.values = new: <T>(0);
+        } else {
+            let new_array = new: <T>(this.size-1);
+
+            let i = 0;
+
+            while i < this.size {
+                if i > index {
+                    new_array[i-1] = this.values[i];
+                } elif i < index {
+                    new_array[i] = this.values[i];
+                }
+
+                i += 1;
+            }
+
+            this.values = new_array;
+            this.size -= 1;
+        }
+    }
+
+    func allocate(size: num) {
+        this.size = size;
+        this.values = new: <T>(this.size);
+    }
+
+    func set(ind: num, elem: T) {
+        if ind >= this.size {
+            error("attempted to set element at index outside of array bounds")    
+        }
+        
+        this.values[ind] = elem;
+    }
+
+    func get_elem_index(elem: T): num {
+        let index: size = 0;
+        
+        while index<this.size {
+            if elem == this.values[index] {
+                return cast: <num>(index);
+            }
+
+            index += 1;
+        }
+
+        return -1;
+    }
+
+    func find(elem: T): num {
+        return this.get_elem_index(elem)
+    }
+
+    func __brace__(rhs: num): T {
+        if(rhs >= this.size) {
+            error("attempted to access element at index outside of array bounds")
+        }
+        return this.values[rhs];
+    }
+
+    func __brace_set__(rhs: num): &T {
+        if(rhs >= this.size) {
+            error("attempted to access element at index outside of array bounds")
+        }
+        return &this.values[rhs];
+    }
+
+    func __iter__(): Iterator<T> {
+        return ListIterator: <T>(this);
+    }
+
+    func __eq__(other: std::Array<T>): bool {
+        if other.size != this.size {
+            return false;
+        }
+        
+        for i in range(0, this.size) {
+            if this.values[i] != other.values[i] {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    func __neq__(other: std::Array<T>): bool {
+        return this.__eq__(other)==false;
+    }
+}
+
+class CallBackFunction {
+    data: opaque;
+    function: (void)(opaque);
+
+    func __init__(function: (void)(opaque), data: opaque) {
+        this.function = function;
+        this.data = data;
+    } 
+
+    func call() {
+        let callback = this.function;
+        callback(this.data);
+    }
+}
+
+let __atexits: std::Array<CallBackFunction> = default: <std::Array<CallBackFunction>>();
+func __init_atexit_methods() {
+    __atexits = std::Array: <CallBackFunction>();
+}
+
+func add_exit_function(onexit: CallBackFunction) {
+    __atexits.push(onexit);
+}
+
+func __call_atexit_methods() {
+    for exitmethod in __atexits {
+        exitmethod.call();
+    }
+}
+
+class Map<KT, VT> {
+    keys: Array<KT>,
+    vals: Array<VT>,
+
+    func __init__() {
+        this.keys = Array: <KT>();
+        this.vals = Array: <VT>();
+    }
+
+    func __brace__(rhs: KT): VT {
+        let ind = this.keys.get_elem_index(rhs);
+        
+        if ind == -1 {
+            error("attempted to access value at nonexistant key in map")
+        }
+
+        return this.vals[ind];
+    }
+    
+    func __brace_set__(rhs: KT): &VT {
+        let ind = this.keys.get_elem_index(rhs);
+
+        if ind == -1 {
+            this.keys.push(rhs);
+            this.vals.push_alloc();
+            ind = this.keys.size-1;
+        }
+
+        return &this.vals[ind];
+    }
+
+    func contains(key: KT): bool {
+        return this.keys.find(key) >= 0;
+    }
+
+    func insert(key: KT, val: VT) {
+        if this.contains(key) {
+            this.vals[this.keys.find(key)] = val;
+        } else {
+            this.keys.push(key);
+            this.vals.push(val);
+        }
+    }
+
+    func remove(key: KT) {
+        let key_index = this.keys.find(key);
+
+        if key_index == -1 {
+            error("attempted to remove value at nonexistant key in map")
+        }
+
+        this.keys.remove(key_index)
+        this.vals.remove(key_index)
+    }
+
+    func __iter__(): Iterator<Pair<KT, VT>> {
+        return MapIterator: <KT, VT>(this);
+    }
+
+    func __eq__(other: std::Map<KT, VT>): bool {
+        return this.keys == other.keys and this.vals == other.vals;
+    }
+
+    func __neq__(other: std::Map<KT, VT>): bool {
+        return this.__eq__(other);
+    }
+}
+
+class String {
+    string: str,
+    
+    func __init__(string: str) {
+        this.string = string;
+    }
+
+    func push(string: str) {
+        this.string = stradd(this.string, string);
+    }
+
+    func push_char(character: char) {
+        let char_str = new: <char>(2);
+        char_str[0] = character;
+        char_str[1] = '\0';
+
+        this.push(char_str);
+    }
+
+    func remove(index: size) {
+        if index >= strlen(this.string) {
+            error("attempted to remove character from index outside of string bounds")
+        }
+        
+        this.string = strremove(this.string, index); 
+    }
+
+    func insert(index: size, string: str) {
+        if index >= strlen(this.string) {
+            error("attempted to insert into index outside of string bounds")
+        }
+        
+        this.string = strinsert(this.string, string, index);
+    }
+
+    func insert_char(index: size, character: char) {
+        if index >= strlen(this.string) {
+            error("attempted to insert into index outside of string bounds")
+        }
+
+        let char_str = new: <char>(2);
+        char_str[0] = character;
+        char_str[1] = '\0';
+
+        this.insert(index, char_str);
+    }
+
+    func len(): size {
+        return cast: <size>(strlen(this.string));
+    }
+
+    func to_num(): num {
+        return stod(this.string);
+    }
+
+    func to_size(): size {
+        return stoi(this.string);
+    }
+
+    func __brace__(index: num): char {
+        if index >= strlen(this.string) {
+            error("attempted to access character from index outside of string bounds")
+        }
+        
+        return this.string[index];
+    }
+
+    func __brace_set__(index: num): &char {
+        if index >= strlen(this.string) {
+            error("attempted to access character from index outside of string bounds")
+        }
+        
+        return &this.string[index];
+    }
+
+    func __add__(rhs: str): str {
+        let new_string = new: <char>(strlen(this.string) + strlen(rhs));
+        strcpy(new_string, this.string);
+        strcat(new_string, rhs);
+
+        return new_string;
+    }
+
+    func __mul__(rhs: num): String {
+        let final_str = String("");
+
+        let i = 0;
+        while i < rhs {
+            final_str.push(this.string);
+            i += 1;
+        }
+
+        return final_str;
+    }
+
+    func __eq__(rhs: str): bool {
+        return strcmp(this.string, rhs)==0;
+    }
+
+    func __neq__(rhs: str): bool {
+        return strcmp(this.string, rhs)!=0;
+    }
+
+    func __to_string__(): str {
+        return this.string;
+    }
+
+    func __to_num__(): num {
+        return this.to_num();
+    }
+
+    func __to_size__(): size {
+        return this.to_size();
+    }
+
+    func __iter__(): Iterator<char> {
+        return StringIterator: <opaque>(this);
+    }
+}
+
+func fmt(fmt_string: str, fmts: Array<str>): str {
+    let final_str: String = String("");
+
+    let i: size = 0;
+    let fmts_index = 0;
+
+    while i < strlen(fmt_string) {
+        if fmt_string[i] == '{' and fmt_string[i+1] == '{' {
+            final_str.push("{");
+            i += 2;
+
+        } elif fmt_string[i] == '{' {
+            if fmts_index >= fmts.size {
+                error("insufficient amount of formats provided for std::fmt");
+            }
+
+            final_str.push(fmts[fmts_index]);
+            i += 2;
+            fmts_index += 1;
+        } else {
+            final_str.push_char(fmt_string[i]);
+            i += 1;
+        }
+    }
+
+    return final_str;
+}
+
+func to_string(sin: str): str {
+    return sin;
+}
+
+module fs {
+    class File {
+        name: str,
+        
+        func __init__(file_name: str) {
+            this.name = file_name;
+        }
+
+        func write(data: str) {
+            let file = fopen(this.name, "w");
+            fprintf(file, "%s", data);
+            fclose(file);
+        }
+
+        func read(): String {
+            let final_val = String("");
+            let file = fopen(this.name, "r");
+
+            while true {
+                let curr_char = fgetc(file);
+                
+                if curr_char == cast: <char>(-1) {
+                    break;
+                }
+
+                final_val.push_char(curr_char);
+            }
+
+            fclose(file);
+
+            return final_val;
+        }
+
+        func append(data: str) {
+            let current_file_val: String = this.read();
+            
+            this.write(current_file_val+data);
+        }
+    }
+
+    func create_directory(dir_name: str) {
+        mkdir(dir_name);
+    }
+
+    func create_file(file_name: str) {
+        let file = fopen(file_name, "w");
+        fprintf(file, "");
+        fclose(file);
+    }
+}
+
+func ext pow(base: num, exp: num): num;
+
+func stoi(s: str): size {
+    let final_num: size = 0;
+
+    let len: size = strlen(s);
+    
+    for i in std::range(0, len) {
+        len -= 1;
+        final_num += (cast: <size>(s[i])-cast: <size>(48))*pow(10, len);
+    }
+
+    return final_num;
+}
+
+func stod(s: str): num {
+    let integer = std::String("");
+    
+    let bi = 0
+    for i in std::range(0, strlen(s)) {
+        if s[i] == '.' {
+            bi = i+1;
+            break;
+        }
+
+        integer.push_char(s[i]);
+    }
+
+    if s[bi-1] != '.' {
+        return cast: <num>(stoi(integer));
+    }
+
+    let decimal = std::String("");
+    for i in std::range(bi, strlen(s)) {
+        if s[i] == '.' {
+            break;
+        }
+
+        decimal.push_char(s[i]);
+    }
+
+    let final_num: num = cast: <num>(stoi(integer));
+
+    let decimal_num: num = cast: <num>(stoi(decimal));
+    decimal_num *= pow(0.1, decimal.len());
+
+    final_num += decimal_num
+
+    return final_num;
+}
+
+func ctos(c: char): str {
+    let string = std::String("")
+    string.push_char(c);
+
+    return string;
+}
+
+func ctoi(c: char): size {
+    return cast: <size>(c)-cast: <size>(48);
+}
+
+func string_from_char_array(chars: Array<char>): str {
+    return chars.values;
+}
+
+func ext sqrt(inp: num): num;
+func ext fmod(inp1: num, inp2: num): num;
+
+func compare_memory(o1: opaque, o2: opaque): bool {
+    return o1==o2;
+}

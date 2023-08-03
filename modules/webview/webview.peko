@@ -1,0 +1,149 @@
+platform "osx" {
+    arch "x86_64" {
+        import objects.webview_osx_x86_64 as object;
+    }
+    arch "arm" {
+        import objects.webview_osx_arm as object;
+    }
+}
+
+platform "linux" {
+    arch "x86_64" {
+        import objects.webview_linux_x86_64 as object;
+    }
+    arch "arm" {
+        import objects.webview_linux_arm as object;
+    }
+}
+
+platform "win32" {
+    import objects.webview_win32 as object;
+}
+
+platform "ios" {
+    arch "x86_64" {
+        import objects.webview_ios_x86_64 as object;
+    }
+    arch "arm" {
+        import objects.webview_ios_arm as object;
+    }
+}
+
+platform "osx"|"linux"|"win32" {
+func ext webview_create(debug: cint, window: opaque): opaque;
+func ext webview_destroy(w: opaque);
+func ext webview_run(w: opaque);
+func ext webview_terminate(w: opaque);
+func ext webview_dispatch(w: opaque, fn: (void)(opaque, opaque), arg: opaque);
+func ext webview_get_window(w: opaque): opaque;
+func ext webview_set_title(w: opaque, title: str);
+func ext webview_set_size(w: opaque, width: cint, height: cint, hints: cint);
+func ext webview_navigate(w: opaque, url: str);
+func ext webview_set_html(w: opaque, htmls: str);
+func ext webview_init(w: opaque, js: str);
+func ext webview_eval(w: opaque, js: str);
+func ext webview_bind(w: opaque, name: str, fn: (void)(str, str, opaque), arg: opaque);
+func ext webview_unbind(w: opaque, name: str);
+func ext webview_return(w: opaque, seq: str, status: cint, result: str);
+
+func WEBVIEW_HINT_NONE(): size {
+    return 0;
+}
+
+func WEBVIEW_HINT_MIN(): cint {
+    return 1;
+}
+
+func WEBVIEW_HINT_MAX(): cint {
+    return 2;
+}
+
+func WEBVIEW_HINT_FIXED(): cint {
+    return 3;
+}
+
+func run_view(arg: opaque): opaque;
+
+class PekoView {
+    title: str,
+    width: cint,
+    height: cint,
+    htmls: str,
+    view_window: opaque,
+    
+    func __init__(title: str, width: cint, height: cint) {
+        this.view_window = webview_create(0, null);
+        webview_set_title(this.view_window, title);
+        webview_set_size(this.view_window, width, height, WEBVIEW_HINT_NONE());
+    }
+
+    func set_size(w: cint, h: cint) {
+        webview_set_size(this.view_window, w, h, WEBVIEW_HINT_NONE());
+    }
+
+    func set_html(htmls: str) {
+        this.htmls = htmls;
+        webview_set_html(this.view_window, htmls);
+    }
+
+    func run() {
+        webview_run(this.view_window);
+        webview_destroy(this.view_window);
+    }
+    
+    func bind(fn_name: str, fn: (void)(str, str, opaque), app: opaque) {
+        webview_bind(this.view_window, fn_name, fn, app);
+    }
+
+    func create_return(seq: str, return_js: str) {
+        webview_return(this.view_window, seq, 0, return_js);
+    }
+    
+    func destroy() {
+        webview_destroy(this.view_window);
+    }
+
+    func set_url(url: str) {
+        webview_navigate(this.view_window, url)
+    }
+}
+}
+
+platform "ios" {
+    func ext createWebview(url: str): cint;
+
+    class PekoView {
+        title: str,
+        width: cint,
+        height: cint,
+        htmls: str,
+        view_window: opaque,
+        url: str
+        
+        func __init__(title: str, width: cint, height: cint) {
+            this.width = width;
+            this.height = height;
+            this.title = title;
+            this.url = ""
+        }
+
+        func set_size(w: cint, h: cint) {
+            this.width = w;
+            this.height = h;
+        }
+
+        func set_html(htmls: str) {
+            this.htmls = htmls
+        }
+
+        func run() {
+            createWebview(this.url)
+        }
+        
+        func destroy() {}
+
+        func set_url(url: str) {
+            this.url = url;
+        }
+    }
+}
